@@ -22,7 +22,7 @@ export const proposals = sqliteTable("proposals", {
   discussionURL: text("discussion_url"),
   proposalSummary: text("proposal_summary"),
   discussionSummary: text("discussion_summary"),
-  temperatureCheckResults: text("temperature_check_results", { mode: "json" }).$type<[number, number]>(),
+  temperatureCheckResults: text("temperature_check_results", { mode: "json" }).$type<number[]>(),
   voteId: text("vote_id"),
   voteType: text("vote_type"),
   voteChoices: text("vote_choices", { mode: "json" }).$type<string[]>(),

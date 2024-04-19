@@ -4,7 +4,7 @@ import { eq, or } from "drizzle-orm";
 import * as schema from "./schema";
 import type { Proposal } from "./schema";
 import fs from "node:fs";
-import type { NewProposal, UpdateProposal, Proposal as OldFormatProposal } from "@nance/nance-sdk";
+import type { Proposal as OldFormatProposal } from "@nance/nance-sdk";
 
 const proposals = schema.proposals;
 export const db: Record<string, BunSQLiteDatabase<typeof schema>> = {};
@@ -30,10 +30,9 @@ console.log("Databases loaded");
 
 export const proposalById = async (space: string, pid: string): Promise<Proposal | null> => {
   try {
-    const res = await db[space].select().from(proposals).where(or(
-      eq(proposals.uuid, pid),
-      eq(proposals.proposalIdNumber, parseInt(pid))
-    )).limit(1);
+    const pidNumber = Number(pid);
+    let where = isNaN(pidNumber) ? eq(proposals.uuid, pid) : eq(proposals.proposalIdNumber, pidNumber);
+    const res = await db[space].select().from(proposals).where(where).limit(1);
     if (res.length === 0) return Promise.reject("Proposal not found");
     return res[0] as Proposal;
   } catch (e) {
@@ -75,8 +74,33 @@ export const addProposal = async (space: string, proposalIn: OldFormatProposal):
   }
 }
 
-export const updateProposal = async (space: string, proposal: UpdateProposal): Promise<string> => {
+export const updateProposal = async (space: string, proposalIn: OldFormatProposal): Promise<string> => {
   try {
+    const proposal: Proposal = {
+      uuid: proposalIn.uuid,
+      createdAt: new Date(proposalIn.createdTime),
+      updatedAt: new Date(proposalIn.lastEditedTime || new Date()),
+      governanceCycle: proposalIn.governanceCycle || 0,
+      status: proposalIn.status,
+      proposalIdNumber: proposalIn.proposalId || 0,
+      title: proposalIn.title,
+      body: proposalIn.body,
+      authorAddress: proposalIn.authorAddress as `0x${string}` || null,
+      authorDiscordId: proposalIn.authorDiscordId || null,
+      discussionURL: proposalIn.discussionThreadURL || null,
+      proposalSummary: proposalIn.proposalSummary || null,
+      discussionSummary: proposalIn.threadSummary || null,
+      coauthorAddresses: proposalIn.coauthors as `0x${string}`[] || null,
+      temperatureCheckResults: proposalIn.temperatureCheckVotes || null,
+      voteId: proposalIn.voteURL || null,
+      voteType: proposalIn.voteSetup?.type || null,
+      voteChoices: proposalIn.voteSetup?.choices || null,
+      voteStart: null,    // TO FETCH
+      voteEnd: null,      // TO FETCH
+      voteResults: proposalIn.voteResults?.scores || null,
+      voteCount: proposalIn.voteResults?.votes || null,
+      voteQuorum: null    // TO FETCH
+    };
     const res = await db[space].update(proposals).set(proposal).where(
       eq(proposals.uuid, proposal.uuid),
     ).returning({ uuid: proposals.uuid });

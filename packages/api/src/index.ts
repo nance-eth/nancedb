@@ -13,7 +13,7 @@ app.get("/", (c) => {
 
 app.route("/s", spaceRouter)
 app.route("/download", downloadRouter);
-app.get("/pin", async (c) => {
+app.get("/pin/:space", async (c) => {
   const res = await pinDb();
   return c.json({ data: res });
 });
