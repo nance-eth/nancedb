@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { prettyJSON } from "hono/pretty-json";
 import spaceRouter from "./routes/space";
+import downloadRouter from "./routes/download";
 import { pinDb } from "./ipfs";
 
 const app = new Hono();
@@ -11,6 +12,7 @@ app.get("/", (c) => {
 });
 
 app.route("/s", spaceRouter)
+app.route("/download", downloadRouter);
 app.get("/pin", async (c) => {
   const res = await pinDb();
   return c.json({ data: res });
